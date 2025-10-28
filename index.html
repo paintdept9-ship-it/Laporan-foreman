@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <title>Aplikasi Laporan Akhir Shift</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #34495e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px 0;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        header h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            text-align: center;
+            opacity: 0.9;
+        }
+        
+        .tabs {
+            display: flex;
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab-button {
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            flex-grow: 1;
+            text-align: center;
+            color: var(--dark);
+            min-width: 120px;
+        }
+        
+        .tab-button:hover {
+            background-color: var(--light);
+        }
+        
+        .tab-button.active {
+            background-color: var(--secondary);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border 0.3s ease;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--secondary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+        
+        .col {
+            flex: 1;
+            padding: 0 10px;
+            min-width: 200px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: var(--light);
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+        }
+        
+        .btn-success:hover {
+            background-color: #219653;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning);
+        }
+        
+        .btn-warning:hover {
+            background-color: #e67e22;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .section-title {
+            background-color: var(--light);
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin: 25px 0 15px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .temperature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .temperature-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+        
+        .temperature-card h4 {
+            margin-bottom: 15px;
+            color: var(--primary);
+            text-align: center;
+        }
+        
+        .report-output {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 20px;
+            margin-top: 20px;
+            white-space: pre-line;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.5;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        /* Styling khusus untuk laporan PDF */
+        .pdf-report {
+            background: white;
+            padding: 30px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.4;
+        }
+        
+        .pdf-header {
+            text-align: center;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .pdf-header h1 {
+            color: var(--primary);
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .pdf-header .subtitle {
+            color: var(--dark);
+            font-size: 16px;
+            font-weight: normal;
+        }
+        
+        .pdf-section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+        
+        .pdf-section h2 {
+            color: var(--primary);
+            font-size: 18px;
+            border-bottom: 2px solid var(--light);
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .pdf-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        
+        .pdf-table th {
+            background-color: var(--primary);
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .pdf-table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .pdf-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .signature-section {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .signature-box {
+            text-align: center;
+            width: 200px;
+        }
+        
+        .signature-line {
+            border-top: 1px solid #333;
+            margin: 60px 0 10px 0;
+        }
+        
+        .notification {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .notification.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .notification.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .reports-grid {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .report-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .tab-button {
+                flex: 1 0 50%;
+                min-width: 100px;
+                padding: 12px 10px;
+                font-size: 14px;
+            }
+            
+            .row {
+                flex-direction: column;
+            }
+            
+            .col {
+                margin-bottom: 15px;
+            }
+            
+            .temperature-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            .signature-section {
+                flex-direction: column;
+                gap: 30px;
+            }
+        }
+        
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .pdf-report, .pdf-report * {
+                visibility: visible;
+            }
+            .pdf-report {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Aplikasi Laporan Akhir Shift</h1>
+            <p>Sistem Input Data Produksi dan Monitoring Harian</p>
+        </header>
+        
+        <div id="notification-area"></div>
+        
+        <div class="tabs">
+            <button class="tab-button active" data-tab="shift-info">Info Shift</button>
+            <button class="tab-button" data-tab="attendance">Absensi</button>
+            <button class="tab-button" data-tab="temperature">Cek Suhu</button>
+            <button class="tab-button" data-tab="quality">Problem Quality</button>
+            <button class="tab-button" data-tab="material">Supply Material</button>
+            <button class="tab-button" data-tab="packing">Packing Lorry</button>
+            <button class="tab-button" data-tab="machine">Trouble Mesin</button>
+            <button class="tab-button" data-tab="report">Laporan</button>
+            <button class="tab-button" data-tab="history">Riwayat</button>
+        </div>
+        
+        <!-- Tab 1: Info Shift -->
+        <div id="shift-info" class="tab-content active">
+            <h2>Informasi Shift</h2>
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label for="hari">Hari</label>
+                        <select id="hari">
+                            <option value="">Pilih Hari</option>
+                            <option value="Senin">Senin</option>
+                            <option value="Selasa">Selasa</option>
+                            <option value="Rabu">Rabu</option>
+                            <option value="Kamis">Kamis</option>
+                            <option value="Jumat">Jumat</option>
+                            <option value="Sabtu">Sabtu</option>
+                            <option value="Minggu">Minggu</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label for="tanggal">Tanggal</label>
+                        <input type="date" id="tanggal">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label for="shift">Shift</label>
+                        <select id="shift">
+                            <option value="">Pilih Shift</option>
+                            <option value="Shift 1 (08:00-16:00)">Shift 1 (08:00-16:00)</option>
+                            <option value="Shift 2 (16:00-00:00)">Shift 2 (16:00-00:00)</option>
+                            <option value="Shift 3 (00:00-08:00)">Shift 3 (00:00-08:00)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label for="foreman">Nama Foreman</label>
+                        <input type="text" id="foreman" placeholder="Masukkan nama foreman">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab 2: Absensi -->
+        <div id="attendance" class="tab-content">
+            <h2>Input Absensi</h2>
+            <table id="attendance-table">
+                <thead>
+                    <tr>
+                        <th>Line/Department</th>
+                        <th>Masuk</th>
+                        <th>Tidak Masuk</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data akan diisi oleh JavaScript -->
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th>TOTAL KESELURUHAN</th>
+                        <th id="total-masuk">0</th>
+                        <th id="total-tidak-masuk">0</th>
+                        <th id="total-keseluruhan">0</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <!-- Tab 3: Cek Suhu -->
+        <div id="temperature" class="tab-content">
+            <h2>Hasil Cek Suhu</h2>
+            
+            <div class="section-title">Turun Oven</div>
+            <div class="temperature-grid" id="turun-oven-grid">
+                <!-- Data akan diisi oleh JavaScript -->
+            </div>
+            
+            <div class="section-title">Masuk Spray Booth Primer</div>
+            <div class="temperature-grid" id="spray-booth-grid">
+                <!-- Data akan diisi oleh JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Tab 4: Problem Quality -->
+        <div id="quality" class="tab-content">
+            <h2>Problem Quality</h2>
+            <div class="form-group">
+                <label for="quality-problems">Masalah Kualitas yang Ditemukan</label>
+                <textarea id="quality-problems" rows="10" placeholder="Jelaskan masalah kualitas yang ditemukan selama shift..."></textarea>
+            </div>
+        </div>
+        
+        <!-- Tab 5: Supply Material -->
+        <div id="material" class="tab-content">
+            <h2>Supply Material</h2>
+            <div class="form-group">
+                <label for="material-supply">Informasi Supply Material</label>
+                <textarea id="material-supply" rows="10" placeholder="Jelaskan kondisi supply material selama shift..."></textarea>
+            </div>
+        </div>
+        
+        <!-- Tab 6: Packing Lorry -->
+        <div id="packing" class="tab-content">
+            <h2>Packing Lorry</h2>
+            <div class="form-group">
+                <label for="packing-lorry">Data Packing Lorry</label>
+                <textarea id="packing-lorry" rows="10" placeholder="Jelaskan data packing lorry selama shift..."></textarea>
+            </div>
+        </div>
+        
+        <!-- Tab 7: Trouble Mesin -->
+        <div id="machine" class="tab-content">
+            <h2>Trouble Mesin</h2>
+            <div class="form-group">
+                <label for="machine-trouble">Masalah Mesin yang Terjadi</label>
+                <textarea id="machine-trouble" rows="10" placeholder="Jelaskan trouble mesin yang terjadi selama shift..."></textarea>
+            </div>
+        </div>
+        
+        <!-- Tab 8: Laporan -->
+        <div id="report" class="tab-content">
+            <h2>Laporan Akhir Shift</h2>
+            <div class="action-buttons">
+                <button class="btn btn-success" id="generate-report">Generate Laporan</button>
+                <button class="btn" id="save-report">Simpan ke Database</button>
+                <button class="btn btn-warning" id="save-pdf">Simpan sebagai PDF</button>
+                <button class="btn btn-danger" id="reset-form">Reset Form</button>
+            </div>
+            <div class="report-output" id="report-output">
+                Laporan akan ditampilkan di sini setelah Anda mengklik "Generate Laporan"
+            </div>
+            
+            <!-- Hidden container untuk PDF -->
+            <div id="pdf-container" style="display: none;"></div>
+        </div>
+        
+        <!-- Tab 9: Riwayat Laporan -->
+        <div id="history" class="tab-content">
+            <h2>Riwayat Laporan</h2>
+            <div class="action-buttons">
+                <button class="btn" id="load-reports">Muat Riwayat</button>
+                <button class="btn btn-danger" id="clear-history">Hapus Riwayat</button>
+            </div>
+            <div id="reports-list">
+                <!-- Daftar laporan akan ditampilkan di sini -->
+            </div>
+        </div>
+        
+        <footer>
+            <p>Aplikasi Laporan Akhir Shift &copy; 2023 - Sistem Informasi Produksi</p>
+        </footer>
+    </div>
+
+    <script>
+        // Data untuk aplikasi
+        const departments = [
+            "Staff",
+            "Wurster", 
+            "Repair & Touch Up",
+            "Incoming Step Assy Buka Cap",
+            "Chrome Verifikasi Aerox Remover",
+            "Painting 4",
+            "User & CPC",
+            "Maintenance"
+        ];
+
+        // Variabel global untuk Supabase
+        let supabase;
+
+        // Inisialisasi aplikasi
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Aplikasi dimuat...');
+            
+            // Setup tab navigation
+            setupTabs();
+            
+            // Setup attendance table
+            setupAttendanceTable();
+            
+            // Setup temperature inputs
+            setupTemperatureInputs();
+            
+            // Setup report generation
+            setupReportGeneration();
+            
+            // Inisialisasi Supabase
+            initializeSupabase();
+            
+            // Set tanggal hari ini
+            document.getElementById('tanggal').valueAsDate = new Date();
+            
+            console.log('Semua komponen berhasil diinisialisasi');
+        });
+
+        // Fungsi untuk inisialisasi Supabase
+        function initializeSupabase() {
+            const SUPABASE_URL = 'https://skjtzbldpvmacmotdomr.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNranR6YmxkcHZtYWNtb3Rkb21yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0Nzk4ODYsImV4cCI6MjA3MzA1NTg4Nn0.u8Zg2k7us_wHnamqplRYZ7rI6ls68zRZ6iLgfitTviM';
+            
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('Supabase berhasil diinisialisasi');
+            } catch (error) {
+                console.error('Error inisialisasi Supabase:', error);
+                supabase = {
+                    from: () => ({
+                        insert: () => ({ select: () => Promise.resolve({ data: null, error: new Error('Supabase not initialized') }) }),
+                        select: () => Promise.resolve({ data: null, error: new Error('Supabase not initialized') }),
+                        delete: () => Promise.resolve({ error: new Error('Supabase not initialized') })
+                    })
+                };
+            }
+        }
+        
+        // Fungsi untuk menampilkan notifikasi
+        function showNotification(message, type = 'success') {
+            const notificationArea = document.getElementById('notification-area');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notificationArea.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+        
+        // Fungsi untuk navigasi tab
+        function setupTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    button.classList.add('active');
+                    const tabId = button.getAttribute('data-tab');
+                    const targetTab = document.getElementById(tabId);
+                    
+                    if (targetTab) {
+                        targetTab.classList.add('active');
+                    }
+                });
+            });
+        }
+        
+        // Fungsi untuk setup tabel absensi
+        function setupAttendanceTable() {
+            const tbody = document.querySelector('#attendance-table tbody');
+            
+            departments.forEach(dept => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${dept}</td>
+                    <td><input type="number" min="0" value="0" class="attendance-input masuk" data-dept="${dept}"></td>
+                    <td><input type="number" min="0" value="0" class="attendance-input tidak-masuk" data-dept="${dept}"></td>
+                    <td><span class="attendance-total" data-dept="${dept}">0</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            document.querySelectorAll('.attendance-input').forEach(input => {
+                input.addEventListener('input', updateAttendanceTotals);
+            });
+            
+            updateAttendanceTotals();
+        }
+        
+        // Fungsi untuk update total absensi
+        function updateAttendanceTotals() {
+            let totalMasuk = 0;
+            let totalTidakMasuk = 0;
+            
+            departments.forEach(dept => {
+                const masuk = parseInt(document.querySelector(`.masuk[data-dept="${dept}"]`).value) || 0;
+                const tidakMasuk = parseInt(document.querySelector(`.tidak-masuk[data-dept="${dept}"]`).value) || 0;
+                const total = masuk + tidakMasuk;
+                
+                document.querySelector(`.attendance-total[data-dept="${dept}"]`).textContent = total;
+                
+                totalMasuk += masuk;
+                totalTidakMasuk += tidakMasuk;
+            });
+            
+            document.getElementById('total-masuk').textContent = totalMasuk;
+            document.getElementById('total-tidak-masuk').textContent = totalTidakMasuk;
+            document.getElementById('total-keseluruhan').textContent = totalMasuk + totalTidakMasuk;
+        }
+        
+        // Fungsi untuk setup input suhu
+        function setupTemperatureInputs() {
+            const turunOvenGrid = document.getElementById('turun-oven-grid');
+            const sprayBoothGrid = document.getElementById('spray-booth-grid');
+            
+            for (let i = 1; i <= 8; i++) {
+                const card = document.createElement('div');
+                card.className = 'temperature-card';
+                card.innerHTML = `
+                    <h4>Jam ${i}</h4>
+                    <div class="form-group">
+                        <label for="turun-oven-part-${i}">Part</label>
+                        <input type="text" id="turun-oven-part-${i}" placeholder="Jenis part">
+                    </div>
+                    <div class="form-group">
+                        <label for="turun-oven-suhu-${i}">Suhu Oven (°C)</label>
+                        <input type="number" id="turun-oven-suhu-${i}" placeholder="Suhu dalam derajat">
+                    </div>
+                `;
+                turunOvenGrid.appendChild(card);
+            }
+            
+            for (let i = 1; i <= 8; i++) {
+                const card = document.createElement('div');
+                card.className = 'temperature-card';
+                card.innerHTML = `
+                    <h4>Jam ${i}</h4>
+                    <div class="form-group">
+                        <label for="spray-booth-part-${i}">Part</label>
+                        <input type="text" id="spray-booth-part-${i}" placeholder="Jenis part">
+                    </div>
+                    <div class="form-group">
+                        <label for="spray-booth-suhu-${i}">Suhu (°C)</label>
+                        <input type="number" id="spray-booth-suhu-${i}" placeholder="Suhu dalam derajat">
+                    </div>
+                `;
+                sprayBoothGrid.appendChild(card);
+            }
+        }
+        
+        // Fungsi untuk setup generasi laporan
+        function setupReportGeneration() {
+            document.getElementById('generate-report').addEventListener('click', generateReport);
+            document.getElementById('save-report').addEventListener('click', saveReportToSupabase);
+            document.getElementById('save-pdf').addEventListener('click', saveAsPDF);
+            document.getElementById('reset-form').addEventListener('click', resetForm);
+            document.getElementById('load-reports').addEventListener('click', loadReportsFromSupabase);
+            document.getElementById('clear-history').addEventListener('click', clearHistory);
+        }
+        
+        // Fungsi untuk generate laporan
+        function generateReport() {
+            if (!validateInputs()) {
+                alert('Harap lengkapi informasi shift terlebih dahulu!');
+                return;
+            }
+            
+            const reportData = collectReportData();
+            const report = formatReport(reportData);
+            document.getElementById('report-output').textContent = report;
+            
+            // Juga buat versi PDF
+            createPDFVersion(reportData);
+        }
+        
+        // Fungsi untuk validasi input
+        function validateInputs() {
+            const hari = document.getElementById('hari').value;
+            const tanggal = document.getElementById('tanggal').value;
+            const shift = document.getElementById('shift').value;
+            const foreman = document.getElementById('foreman').value;
+            
+            return hari && tanggal && shift && foreman;
+        }
+        
+        // Fungsi untuk kumpulkan data laporan
+        function collectReportData() {
+            const data = {
+                shiftInfo: {
+                    hari: document.getElementById('hari').value,
+                    tanggal: document.getElementById('tanggal').value,
+                    shift: document.getElementById('shift').value,
+                    foreman: document.getElementById('foreman').value
+                },
+                attendance: {},
+                temperature: {
+                    turunOven: {},
+                    sprayBooth: {}
+                },
+                qualityProblems: document.getElementById('quality-problems').value,
+                materialSupply: document.getElementById('material-supply').value,
+                packingLorry: document.getElementById('packing-lorry').value,
+                machineTrouble: document.getElementById('machine-trouble').value
+            };
+            
+            departments.forEach(dept => {
+                data.attendance[dept] = {
+                    masuk: parseInt(document.querySelector(`.masuk[data-dept="${dept}"]`).value) || 0,
+                    tidakMasuk: parseInt(document.querySelector(`.tidak-masuk[data-dept="${dept}"]`).value) || 0,
+                    total: parseInt(document.querySelector(`.attendance-total[data-dept="${dept}"]`).textContent) || 0
+                };
+            });
+            
+            for (let i = 1; i <= 8; i++) {
+                data.temperature.turunOven[`Jam ${i}`] = {
+                    part: document.getElementById(`turun-oven-part-${i}`).value,
+                    suhu: document.getElementById(`turun-oven-suhu-${i}`).value
+                };
+                
+                data.temperature.sprayBooth[`Jam ${i}`] = {
+                    part: document.getElementById(`spray-booth-part-${i}`).value,
+                    suhu: document.getElementById(`spray-booth-suhu-${i}`).value
+                };
+            }
+            
+            return data;
+        }
+        
+        // Fungsi untuk format laporan teks
+        function formatReport(data) {
+            let report = "=".repeat(60) + "\n";
+            report += "LAPORAN AKHIR SHIFT\n".padStart(40) + "\n";
+            report += "=".repeat(60) + "\n\n";
+            
+            report += `Hari/Tanggal: ${data.shiftInfo.hari}, ${formatDate(data.shiftInfo.tanggal)}\n`;
+            report += `Shift: ${data.shiftInfo.shift}\n`;
+            report += `Foreman: ${data.shiftInfo.foreman}\n\n`;
+            
+            report += "ABSENSI:\n";
+            report += "-".repeat(50) + "\n";
+            report += `${"Line/Department".padEnd(35)} ${"Masuk".padEnd(6)} ${"Tidak".padEnd(6)} ${"Total".padEnd(6)}\n`;
+            report += "-".repeat(50) + "\n";
+            
+            let totalMasuk = 0;
+            let totalTidak = 0;
+            
+            departments.forEach(dept => {
+                const att = data.attendance[dept];
+                report += `${dept.padEnd(35)} ${att.masuk.toString().padEnd(6)} ${att.tidakMasuk.toString().padEnd(6)} ${att.total.toString().padEnd(6)}\n`;
+                totalMasuk += att.masuk;
+                totalTidak += att.tidakMasuk;
+            });
+            
+            report += "-".repeat(50) + "\n";
+            report += `${"TOTAL".padEnd(35)} ${totalMasuk.toString().padEnd(6)} ${totalTidak.toString().padEnd(6)} ${(totalMasuk + totalTidak).toString().padEnd(6)}\n\n`;
+            
+            report += "TURUN OVEN:\n";
+            report += "-".repeat(40) + "\n";
+            for (let i = 1; i <= 8; i++) {
+                const jam = `Jam ${i}`;
+                const temp = data.temperature.turunOven[jam];
+                if (temp.part || temp.suhu) {
+                    report += `${jam}: Part ${temp.part}, Suhu ${temp.suhu}°C\n`;
+                }
+            }
+            report += "\n";
+            
+            report += "SPRAY BOOTH PRIMER:\n";
+            report += "-".repeat(40) + "\n";
+            for (let i = 1; i <= 8; i++) {
+                const jam = `Jam ${i}`;
+                const temp = data.temperature.sprayBooth[jam];
+                if (temp.part || temp.suhu) {
+                    report += `${jam}: Part ${temp.part}, Suhu ${temp.suhu}°C\n`;
+                }
+            }
+            report += "\n";
+            
+            if (data.qualityProblems) {
+                report += "PROBLEM QUALITY:\n";
+                report += "-".repeat(40) + "\n";
+                report += data.qualityProblems + "\n\n";
+            }
+            
+            if (data.materialSupply) {
+                report += "SUPPLY MATERIAL:\n";
+                report += "-".repeat(40) + "\n";
+                report += data.materialSupply + "\n\n";
+            }
+            
+            if (data.packingLorry) {
+                report += "PACKING LORRY:\n";
+                report += "-".repeat(40) + "\n";
+                report += data.packingLorry + "\n\n";
+            }
+            
+            if (data.machineTrouble) {
+                report += "TROUBLE MESIN:\n";
+                report += "-".repeat(40) + "\n";
+                report += data.machineTrouble + "\n\n";
+            }
+            
+            return report;
+        }
+        
+        // Fungsi untuk membuat versi PDF
+        function createPDFVersion(data) {
+            const pdfContainer = document.getElementById('pdf-container');
+            
+            let html = `
+                <div class="pdf-report">
+                    <div class="pdf-header">
+                        <h1>LAPORAN AKHIR SHIFT</h1>
+                        <div class="subtitle">Sistem Monitoring Produksi Harian</div>
+                    </div>
+                    
+                    <div class="pdf-section">
+                        <h2>Informasi Shift</h2>
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="width: 30%;"><strong>Hari/Tanggal</strong></td>
+                                <td>${data.shiftInfo.hari}, ${formatDate(data.shiftInfo.tanggal)}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Shift</strong></td>
+                                <td>${data.shiftInfo.shift}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Foreman</strong></td>
+                                <td>${data.shiftInfo.foreman}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="pdf-section">
+                        <h2>Data Absensi</h2>
+                        <table class="pdf-table">
+                            <thead>
+                                <tr>
+                                    <th>Line/Department</th>
+                                    <th>Masuk</th>
+                                    <th>Tidak Masuk</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            let totalMasuk = 0;
+            let totalTidak = 0;
+            
+            departments.forEach(dept => {
+                const att = data.attendance[dept];
+                html += `
+                    <tr>
+                        <td>${dept}</td>
+                        <td>${att.masuk}</td>
+                        <td>${att.tidakMasuk}</td>
+                        <td>${att.total}</td>
+                    </tr>
+                `;
+                totalMasuk += att.masuk;
+                totalTidak += att.tidakMasuk;
+            });
+            
+            html += `
+                            </tbody>
+                            <tfoot>
+                                <tr style="background-color: #e9ecef; font-weight: bold;">
+                                    <td>TOTAL</td>
+                                    <td>${totalMasuk}</td>
+                                    <td>${totalTidak}</td>
+                                    <td>${totalMasuk + totalTidak}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+            `;
+            
+            // Data Suhu
+            html += `
+                <div class="pdf-section">
+                    <h2>Monitoring Suhu</h2>
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 300px;">
+                            <h3 style="color: #2c3e50; margin-bottom: 15px;">Turun Oven</h3>
+            `;
+            
+            for (let i = 1; i <= 8; i++) {
+                const temp = data.temperature.turunOven[`Jam ${i}`];
+                if (temp.part || temp.suhu) {
+                    html += `<p><strong>Jam ${i}:</strong> Part ${temp.part}, Suhu ${temp.suhu}°C</p>`;
+                }
+            }
+            
+            html += `
+                        </div>
+                        <div style="flex: 1; min-width: 300px;">
+                            <h3 style="color: #2c3e50; margin-bottom: 15px;">Spray Booth Primer</h3>
+            `;
+            
+            for (let i = 1; i <= 8; i++) {
+                const temp = data.temperature.sprayBooth[`Jam ${i}`];
+                if (temp.part || temp.suhu) {
+                    html += `<p><strong>Jam ${i}:</strong> Part ${temp.part}, Suhu ${temp.suhu}°C</p>`;
+                }
+            }
+            
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Problem Quality
+            if (data.qualityProblems) {
+                html += `
+                    <div class="pdf-section">
+                        <h2>Problem Quality</h2>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #e74c3c;">
+                            ${data.qualityProblems.replace(/\n/g, '<br>')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Supply Material
+            if (data.materialSupply) {
+                html += `
+                    <div class="pdf-section">
+                        <h2>Supply Material</h2>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #3498db;">
+                            ${data.materialSupply.replace(/\n/g, '<br>')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Packing Lorry
+            if (data.packingLorry) {
+                html += `
+                    <div class="pdf-section">
+                        <h2>Packing Lorry</h2>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #27ae60;">
+                            ${data.packingLorry.replace(/\n/g, '<br>')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Trouble Mesin
+            if (data.machineTrouble) {
+                html += `
+                    <div class="pdf-section">
+                        <h2>Trouble Mesin</h2>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #f39c12;">
+                            ${data.machineTrouble.replace(/\n/g, '<br>')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Signature section
+            html += `
+                <div class="signature-section">
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div>Foreman Shift</div>
+                    </div>
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div>Supervisor</div>
+                    </div>
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div>Manager Produksi</div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px; color: #7f8c8d; font-size: 12px;">
+                    Dokumen ini dibuat secara otomatis oleh Sistem Laporan Shift
+                </div>
+            </div>
+            `;
+            
+            pdfContainer.innerHTML = html;
+        }
+        
+        // Fungsi untuk save sebagai PDF
+        function saveAsPDF() {
+            const reportOutput = document.getElementById('report-output').textContent;
+            
+            if (!reportOutput || reportOutput.includes("Laporan akan ditampilkan")) {
+                alert('Harap generate laporan terlebih dahulu!');
+                return;
+            }
+            
+            const element = document.getElementById('pdf-container');
+            const opt = {
+                margin: [10, 10, 10, 10],
+                filename: `Laporan_Shift_${formatDate(new Date())}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                showNotification('PDF berhasil disimpan!', 'success');
+            });
+        }
+        
+        // Fungsi untuk format tanggal
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        }
+        
+        // Fungsi untuk simpan laporan ke Supabase
+        async function saveReportToSupabase() {
+            const reportOutput = document.getElementById('report-output').textContent;
+            
+            if (!reportOutput || reportOutput.includes("Laporan akan ditampilkan")) {
+                alert('Harap generate laporan terlebih dahulu!');
+                return;
+            }
+            
+            try {
+                const reportData = collectReportData();
+                const reportText = reportOutput;
+                
+                const { data, error } = await supabase
+                    .from('shift_reports')
+                    .insert({
+                        hari: reportData.shiftInfo.hari,
+                        tanggal: reportData.shiftInfo.tanggal,
+                        shift: reportData.shiftInfo.shift,
+                        foreman: reportData.shiftInfo.foreman,
+                        attendance: reportData.attendance,
+                        temperature: reportData.temperature,
+                        quality_problems: reportData.qualityProblems,
+                        material_supply: reportData.materialSupply,
+                        packing_lorry: reportData.packingLorry,
+                        machine_trouble: reportData.machineTrouble,
+                        report_text: reportText,
+                        created_at: new Date().toISOString()
+                    })
+                    .select();
+                
+                if (error) {
+                    throw error;
+                }
+                
+                showNotification('Laporan berhasil disimpan ke database!', 'success');
+                
+            } catch (error) {
+                console.error('Error menyimpan laporan:', error);
+                showNotification('Gagal menyimpan laporan: ' + error.message, 'error');
+            }
+        }
+        
+        // Fungsi untuk memuat riwayat laporan
+        async function loadReportsFromSupabase() {
+            try {
+                const { data, error } = await supabase
+                    .from('shift_reports')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                displayReportsList(data);
+                showNotification(`Berhasil memuat ${data.length} laporan`, 'success');
+                
+            } catch (error) {
+                console.error('Error memuat laporan:', error);
+                showNotification('Gagal memuat riwayat laporan: ' + error.message, 'error');
+            }
+        }
+        
+        // Fungsi untuk menampilkan daftar laporan
+        function displayReportsList(reports) {
+            const reportsList = document.getElementById('reports-list');
+            
+            if (!reports || reports.length === 0) {
+                reportsList.innerHTML = '<p>Tidak ada laporan yang tersimpan.</p>';
+                return;
+            }
+            
+            let html = '<div class="reports-grid">';
+            
+            reports.forEach(report => {
+                const date = new Date(report.created_at);
+                const formattedDate = date.toLocaleDateString('id-ID', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                html += `
+                    <div class="report-item">
+                        <h3>Laporan ${report.shift} - ${formattedDate}</h3>
+                        <p><strong>Foreman:</strong> ${report.foreman}</p>
+                        <p><strong>Hari/Tanggal:</strong> ${report.hari}, ${formatDate(report.tanggal)}</p>
+                        <div class="action-buttons" style="margin-top: 10px;">
+                            <button class="btn" onclick="viewReport(${report.id})">Lihat Laporan</button>
+                            <button class="btn btn-danger" onclick="deleteReport(${report.id})">Hapus</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            reportsList.innerHTML = html;
+        }
+        
+        // Fungsi untuk melihat laporan detail
+        async function viewReport(reportId) {
+            try {
+                const { data, error } = await supabase
+                    .from('shift_reports')
+                    .select('*')
+                    .eq('id', reportId)
+                    .single();
+                
+                if (error) {
+                    throw error;
+                }
+                
+                document.querySelector('.tab-button[data-tab="report"]').click();
+                document.getElementById('report-output').textContent = data.report_text;
+                
+                showNotification('Laporan dimuat!', 'success');
+                
+            } catch (error) {
+                console.error('Error memuat laporan:', error);
+                showNotification('Gagal memuat laporan: ' + error.message, 'error');
+            }
+        }
+        
+        // Fungsi untuk menghapus laporan
+        async function deleteReport(reportId) {
+            if (!confirm('Apakah Anda yakin ingin menghapus laporan ini?')) {
+                return;
+            }
+            
+            try {
+                const { error } = await supabase
+                    .from('shift_reports')
+                    .delete()
+                    .eq('id', reportId);
+                
+                if (error) {
+                    throw error;
+                }
+                
+                showNotification('Laporan berhasil dihapus!', 'success');
+                loadReportsFromSupabase();
+                
+            } catch (error) {
+                console.error('Error menghapus laporan:', error);
+                showNotification('Gagal menghapus laporan: ' + error.message, 'error');
+            }
+        }
+        
+        // Fungsi untuk menghapus riwayat
+        async function clearHistory() {
+            if (!confirm('Apakah Anda yakin ingin menghapus semua riwayat laporan? Tindakan ini tidak dapat dibatalkan!')) {
+                return;
+            }
+            
+            try {
+                const { error } = await supabase
+                    .from('shift_reports')
+                    .delete()
+                    .neq('id', 0);
+                
+                if (error) {
+                    throw error;
+                }
+                
+                showNotification('Semua riwayat laporan berhasil dihapus!', 'success');
+                document.getElementById('reports-list').innerHTML = '<p>Tidak ada laporan yang tersimpan.</p>';
+                
+            } catch (error) {
+                console.error('Error menghapus riwayat:', error);
+                showNotification('Gagal menghapus riwayat: ' + error.message, 'error');
+            }
+        }
+        
+        // Fungsi untuk reset form
+        function resetForm() {
+            if (!confirm('Apakah Anda yakin ingin mereset semua data form? Data yang belum disimpan akan hilang.')) {
+                return;
+            }
+            
+            document.getElementById('hari').value = '';
+            document.getElementById('tanggal').valueAsDate = new Date();
+            document.getElementById('shift').value = '';
+            document.getElementById('foreman').value = '';
+            
+            document.querySelectorAll('.attendance-input').forEach(input => {
+                input.value = '0';
+            });
+            updateAttendanceTotals();
+            
+            document.querySelectorAll('#turun-oven-grid input, #spray-booth-grid input').forEach(input => {
+                input.value = '';
+            });
+            
+            document.querySelectorAll('textarea').forEach(textarea => {
+                textarea.value = '';
+            });
+            
+            document.getElementById('report-output').textContent = 'Laporan akan ditampilkan di sini setelah Anda mengklik "Generate Laporan"';
+            
+            showNotification('Form berhasil direset!', 'success');
+        }
+    </script>
+</body>
+</html>
