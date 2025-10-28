@@ -273,6 +273,7 @@
             padding: 30px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.4;
+            color: #333;
         }
         
         .pdf-header {
@@ -311,19 +312,21 @@
             width: 100%;
             border-collapse: collapse;
             margin: 10px 0;
+            font-size: 12px;
         }
         
         .pdf-table th {
             background-color: var(--primary);
             color: white;
-            padding: 10px;
+            padding: 8px;
             text-align: left;
             font-weight: 600;
+            border: 1px solid #ddd;
         }
         
         .pdf-table td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
+            padding: 8px;
+            border: 1px solid #ddd;
         }
         
         .pdf-table tr:nth-child(even) {
@@ -419,20 +422,14 @@
                 gap: 30px;
             }
         }
-        
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            .pdf-report, .pdf-report * {
-                visibility: visible;
-            }
-            .pdf-report {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-            }
+
+        /* Hidden PDF container - TIDAK DISPLAY NONE */
+        #pdf-container {
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+            width: 210mm;
+            background: white;
         }
     </style>
 </head>
@@ -593,9 +590,6 @@
             <div class="report-output" id="report-output">
                 Laporan akan ditampilkan di sini setelah Anda mengklik "Generate Laporan"
             </div>
-            
-            <!-- Hidden container untuk PDF -->
-            <div id="pdf-container" style="display: none;"></div>
         </div>
         
         <!-- Tab 9: Riwayat Laporan -->
@@ -614,6 +608,9 @@
             <p>Aplikasi Laporan Akhir Shift &copy; 2023 - Sistem Informasi Produksi</p>
         </footer>
     </div>
+
+    <!-- PDF Container - DIPINDAH KE LUAR dan TIDAK DISEMBUNYIKAN DENGAN DISPLAY NONE -->
+    <div id="pdf-container"></div>
 
     <script>
         // Data untuk aplikasi
@@ -961,18 +958,18 @@
                     
                     <div class="pdf-section">
                         <h2>Informasi Shift</h2>
-                        <table style="width: 100%;">
+                        <table style="width: 100%; border-collapse: collapse;">
                             <tr>
-                                <td style="width: 30%;"><strong>Hari/Tanggal</strong></td>
-                                <td>${data.shiftInfo.hari}, ${formatDate(data.shiftInfo.tanggal)}</td>
+                                <td style="width: 30%; padding: 8px; border: 1px solid #ddd;"><strong>Hari/Tanggal</strong></td>
+                                <td style="padding: 8px; border: 1px solid #ddd;">${data.shiftInfo.hari}, ${formatDate(data.shiftInfo.tanggal)}</td>
                             </tr>
                             <tr>
-                                <td><strong>Shift</strong></td>
-                                <td>${data.shiftInfo.shift}</td>
+                                <td style="padding: 8px; border: 1px solid #ddd;"><strong>Shift</strong></td>
+                                <td style="padding: 8px; border: 1px solid #ddd;">${data.shiftInfo.shift}</td>
                             </tr>
                             <tr>
-                                <td><strong>Foreman</strong></td>
-                                <td>${data.shiftInfo.foreman}</td>
+                                <td style="padding: 8px; border: 1px solid #ddd;"><strong>Foreman</strong></td>
+                                <td style="padding: 8px; border: 1px solid #ddd;">${data.shiftInfo.foreman}</td>
                             </tr>
                         </table>
                     </div>
@@ -1034,7 +1031,7 @@
             for (let i = 1; i <= 8; i++) {
                 const temp = data.temperature.turunOven[`Jam ${i}`];
                 if (temp.part || temp.suhu) {
-                    html += `<p><strong>Jam ${i}:</strong> Part ${temp.part}, Suhu ${temp.suhu}°C</p>`;
+                    html += `<p style="margin: 5px 0;"><strong>Jam ${i}:</strong> Part ${temp.part || '-'}, Suhu ${temp.suhu || '-'}°C</p>`;
                 }
             }
             
@@ -1047,7 +1044,7 @@
             for (let i = 1; i <= 8; i++) {
                 const temp = data.temperature.sprayBooth[`Jam ${i}`];
                 if (temp.part || temp.suhu) {
-                    html += `<p><strong>Jam ${i}:</strong> Part ${temp.part}, Suhu ${temp.suhu}°C</p>`;
+                    html += `<p style="margin: 5px 0;"><strong>Jam ${i}:</strong> Part ${temp.part || '-'}, Suhu ${temp.suhu || '-'}°C</p>`;
                 }
             }
             
@@ -1111,6 +1108,7 @@
                     <div class="signature-box">
                         <div class="signature-line"></div>
                         <div>Foreman Shift</div>
+                        <div><strong>${data.shiftInfo.foreman}</strong></div>
                     </div>
                     <div class="signature-box">
                         <div class="signature-line"></div>
@@ -1123,7 +1121,7 @@
                 </div>
                 
                 <div style="text-align: center; margin-top: 30px; color: #7f8c8d; font-size: 12px;">
-                    Dokumen ini dibuat secara otomatis oleh Sistem Laporan Shift
+                    Dokumen ini dibuat secara otomatis oleh Sistem Laporan Shift - ${new Date().toLocaleDateString('id-ID')}
                 </div>
             </div>
             `;
@@ -1131,7 +1129,7 @@
             pdfContainer.innerHTML = html;
         }
         
-        // Fungsi untuk save sebagai PDF
+        // Fungsi untuk save sebagai PDF - DIPERBAIKI
         function saveAsPDF() {
             const reportOutput = document.getElementById('report-output').textContent;
             
@@ -1141,17 +1139,44 @@
             }
             
             const element = document.getElementById('pdf-container');
+            
+            // Pastikan elemen ada dan punya konten
+            if (!element || element.innerHTML.trim() === '') {
+                alert('Harap generate laporan terlebih dahulu sebelum menyimpan PDF!');
+                return;
+            }
+            
             const opt = {
                 margin: [10, 10, 10, 10],
-                filename: `Laporan_Shift_${formatDate(new Date())}.pdf`,
+                filename: `Laporan_Shift_${formatDateForFilename(new Date())}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    logging: true
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'portrait' 
+                }
             };
             
             html2pdf().set(opt).from(element).save().then(() => {
                 showNotification('PDF berhasil disimpan!', 'success');
+            }).catch(error => {
+                console.error('Error generating PDF:', error);
+                showNotification('Gagal menyimpan PDF: ' + error.message, 'error');
             });
+        }
+        
+        // Fungsi untuk format tanggal untuk filename
+        function formatDateForFilename(date) {
+            const d = new Date(date);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}_${month}_${year}`;
         }
         
         // Fungsi untuk format tanggal
